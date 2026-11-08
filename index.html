@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBHS Student Health Portal</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            max-width: 500px; 
+            margin: auto; 
+            background-color: #f4f7f6;
+            text-align: center;
+        }
+        .header h1 { color: #007bff; margin-bottom: 5px; }
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            text-align: left;
+        }
+        label {
+            display: block;
+            margin-top: 12px;
+            font-weight: bold;
+            font-size: 14px;
+            color: #333;
+        }
+        input, textarea { 
+            font-size: 16px; 
+            padding: 10px; 
+            width: 100%; 
+            border-radius: 6px; 
+            border: 1px solid #ccc; 
+            margin-top: 5px;
+        }
+        textarea { resize: vertical; height: 80px; }
+        .submit-btn { 
+            font-size: 16px; 
+            padding: 12px; 
+            cursor: pointer; 
+            border-radius: 6px; 
+            background: #28a745; 
+            color: white; 
+            border: none; 
+            width: 100%;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        .submit-btn:hover { background: #218838; }
+    </style>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } 
+            from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBU42YfMdQQH10iwbvCwjS2_3jmM1f_HXg",
+            authDomain: "sbhsclinic-2bc77.firebaseapp.com",
+            projectId: "sbhsclinic-2bc77",
+            storageBucket: "sbhsclinic-2bc77.firebasestorage.app",
+            messagingSenderId: "111813826787",
+            appId: "1:111813826787:web:5dac473d81b525f8488dd6",
+            measurementId: "G-T9B208DEZ6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const clinicRef = collection(db, "clinic_records");
+
+        window.submitRecord = async function() {
+            const studentName = document.getElementById("studentName").value.trim();
+            const studentNum = document.getElementById("studentNum").value.trim();
+            const visitDate = document.getElementById("visitDate").value.trim();
+            const symptom = document.getElementById("symptom").value.trim();
+
+            if (!studentName || !studentNum || !visitDate || !symptom) {
+                alert("Paki-punan ang lahat ng impormasyon!");
+                return;
+            }
+
+            try {
+                await addDoc(clinicRef, {
+                    name: studentName,
+                    studentNumber: studentNum,
+                    date: visitDate,
+                    complaint: symptom,
+                    timestamp: serverTimestamp()
+                });
+
+                document.getElementById("studentName").value = "";
+                document.getElementById("studentNum").value = "";
+                document.getElementById("visitDate").value = "";
+                document.getElementById("symptom").value = "";
+                
+                alert("Na-save na ang record mo sa Clinic Database!");
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                alert("Nagka-error sa pag-save. Paki-subukan ulit.");
+            }
+        };
+    </script>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🏥 SBHS Clinic Portal</h1>
+        <p>Student Health Log System</p>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top:0; color:#007bff;">Mag-submit ng Clinic Form</h3>
+        
+        <label for="studentName">Pangalan ng Estudyante:</label>
+        <input type="text" id="studentName" placeholder="Hal. Juan Dela Cruz">
+
+        <label for="studentNum">Student Number:</label>
+        <input type="text" id="studentNum" placeholder="Hal. 2026-00123">
+
+        <label for="visitDate">Petsa ng Pagpunta:</label>
+        <input type="date" id="visitDate">
+
+        <label for="symptom">Anong Masakit / Nararamdaman:</label>
+        <textarea id="symptom" placeholder="Hal. Masakit ang ulo, nahihilo, o masakit ang tiyan..."></textarea>
+
+        <button class="submit-btn" onclick="submitRecord()">I-submit sa Clinic</button>
+    </div>
+
+</body>
+</html>

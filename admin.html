@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBHS Clinic Admin Dashboard</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            max-width: 650px; 
+            margin: auto; 
+            background-color: #f4f7f6;
+            text-align: center;
+        }
+        .header h1 { color: #007bff; margin-bottom: 5px; }
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            text-align: left;
+        }
+        input { 
+            font-size: 16px; 
+            padding: 10px; 
+            width: 100%; 
+            border-radius: 6px; 
+            border: 1px solid #ccc; 
+            margin-top: 5px;
+        }
+        .btn { 
+            font-size: 16px; 
+            padding: 12px; 
+            cursor: pointer; 
+            border-radius: 6px; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            width: 100%;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        .count-box { 
+            font-size: 28px; 
+            color: #007bff; 
+            font-weight: bold; 
+            text-align: center; 
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        ul { list-style-type: none; padding: 0; }
+        li { 
+            background: #f8f9fa; 
+            margin: 12px 0; 
+            padding: 14px; 
+            border-radius: 8px; 
+            border-left: 5px solid #007bff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .record-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 15px;
+            color: #333;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 6px;
+            margin-bottom: 8px;
+        }
+        .time { font-size: 12px; color: #6c757d; font-weight: normal; }
+        .symptom-text { color: #d9534f; font-weight: bold; }
+        #dashboard-content { display: none; }
+    </style>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy } 
+            from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBU42YfMdQQH10iwbvCwjS2_3jmM1f_HXg",
+            authDomain: "sbhsclinic-2bc77.firebaseapp.com",
+            projectId: "sbhsclinic-2bc77",
+            storageBucket: "sbhsclinic-2bc77.firebasestorage.app",
+            messagingSenderId: "111813826787",
+            appId: "1:111813826787:web:5dac473d81b525f8488dd6",
+            measurementId: "G-T9B208DEZ6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const clinicRef = collection(db, "clinic_records");
+
+        window.loginAdmin = function() {
+            const pass = document.getElementById("adminPass").value;
+            if (pass === "admin123") { // PALITAN ANG PASSWORD DITO KUNG GUSTO MO
+                document.getElementById("login-box").style.display = "none";
+                document.getElementById("dashboard-content").style.display = "block";
+                loadRealtimeData();
+            } else {
+                alert("Maling Password!");
+            }
+        };
+
+        function loadRealtimeData() {
+            const q = query(clinicRef, orderBy("timestamp", "desc"));
+            onSnapshot(q, (snapshot) => {
+                const listElement = document.getElementById("recordsList");
+                const countElement = document.getElementById("totalCount");
+                
+                listElement.innerHTML = "";
+                countElement.innerText = snapshot.docs.length;
+
+                if (snapshot.docs.length === 0) {
+                    listElement.innerHTML = `<li style="text-align: center; color: #888; border-left: none;">Wala pang nakatalang pasyente sa clinic.</li>`;
+                    return;
+                }
+
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const li = document.createElement("li");
+                    
+                    let timeString = "Kamakailan lang";
+                    if (data.timestamp && data.timestamp.seconds) {
+                        timeString = new Date(data.timestamp.seconds * 1000).toLocaleTimeString([], { 
+                            hour: '2-digit', 
+                            minute: '2-digit'
+                        });
+                    }
+
+                    li.innerHTML = `
+                        <div class="record-header">
+                            <span>👤 ${data.name} <small>(${data.studentNumber})</small></span>
+                            <span class="time">📅 ${data.date} | 🕒 ${timeString}</span>
+                        </div>
+                        <div><strong>Reklamo / Masakit:</strong> <span class="symptom-text">${data.complaint}</span></div>
+                    `;
+                    listElement.appendChild(li);
+                });
+            });
+        }
+    </script>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🏥 SBHS Clinic Administration</h1>
+    </div>
+
+    <!-- Login Lock Box -->
+    <div id="login-box" class="card">
+        <h3 style="margin-top:0; color:#d9534f; text-align:center;">🔒 Teacher / Nurse Access</h3>
+        <label for="adminPass">Mag-enter ng Password:</label>
+        <input type="password" id="adminPass" placeholder="••••••••">
+        <button class="btn" onclick="loginAdmin()">Mag-login</button>
+    </div>
+
+    <!-- Dashboard Content (Protected) -->
+    <div id="dashboard-content" class="card">
+        <h3 style="margin-top:0; color:#007bff; text-align:center;">Live Clinic Dashboard</h3>
+        
+        <label>Kabuuang Pasyente / Nag-report:</label>
+        <div class="count-box" id="totalCount">0</div>
+        
+        <h4>Talaan ng mga Pasyente (Real-time):</h4>
+        <ul id="recordsList">
+            <li style="text-align: center; color: #888; border-left: none;">Nag-aabang ng mga pumasok na record...</li>
+        </ul>
+    </div>
+
+</body>
+</html>
